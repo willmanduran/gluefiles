@@ -1,14 +1,5 @@
-<svg viewBox="60.416 29.696 138.752 181.248" xmlns="http://www.w3.org/2000/svg" style="max-height: 500px" width="138.752" height="181.248">
-  <title>Glue Files — glue bottle only</title>
-  
-  <g transform="translate(128,128) rotate(-18) translate(-128,-128)" stroke-linejoin="round" stroke-linecap="round" stroke-width="6" stroke="#0F172A" fill="none" id="glue-bottle">
-    
-    <rect fill="#FFFFFF" rx="16" height="116" width="104" y="76" x="76"/>
-    
-    <rect fill="#E0F2FE" rx="8" height="36" width="80" y="116" x="88"/>
-    
-    <rect fill="#FFFFFF" rx="8" height="28" width="48" y="56" x="104"/>
-    
-    <path fill="#0EA5E9" d="M108 50 L148 50 L140 36 L116 36 Z"/>
-  </g>
+<?xml version="1.0" encoding="utf-8"?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M13.5442 10.4558C11.8385 8.75022 9.07316 8.75022 7.36753 10.4558L4.27922 13.5442C2.57359 15.2498 2.57359 18.0152 4.27922 19.7208C5.98485 21.4264 8.75021 21.4264 10.4558 19.7208L12 18.1766" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M10.4558 13.5442C12.1614 15.2498 14.9268 15.2498 16.6324 13.5442L19.7207 10.4558C21.4264 8.75021 21.4264 5.98485 19.7207 4.27922C18.0151 2.57359 15.2497 2.57359 13.5441 4.27922L12 5.82338" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
