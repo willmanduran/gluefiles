@@ -1,4 +1,3 @@
-# ---- Build trees (out-of-source) ----
 /build/
 /build-*/
 /cmake-build-*/
@@ -25,3 +24,7 @@ install_manifest.txt
 *.iml
 .DS_Store
 Thumbs.db
+dist/
+GlueFiles-1.0.0-win64-setup.exe
+SHA256SUMS.txt
+gluefiles-1.0.0-Linux.deb
