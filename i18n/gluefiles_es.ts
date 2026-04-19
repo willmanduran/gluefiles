@@ -5,7 +5,7 @@
     <name>MainWindow</name>
     <message>
         <location filename="../gluefiles.cpp" line="107"/>
-        <source>Glue Files</source>
+        <source>Gluefiles</source>
         <translation>Unir archivos</translation>
     </message>
     <message>
