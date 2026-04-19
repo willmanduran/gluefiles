@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Gluefiles
+Comment=Concatenate files with optional path headers
+Exec=gluefiles
+Icon=gluefiles
+Terminal=false
+Categories=Utility;Development;
+StartupNotify=true
