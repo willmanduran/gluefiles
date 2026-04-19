@@ -20,14 +20,17 @@ endif()
 
 target_link_libraries(gluefiles PRIVATE Qt6::Widgets)
 
-install(TARGETS gluefiles
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+if (WIN32)
+  install(TARGETS gluefiles RUNTIME DESTINATION .)
+  install(SCRIPT "${CMAKE_SOURCE_DIR}/cmake/windeployqt.cmake")
+else()
+  install(TARGETS gluefiles RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()
 
 if (UNIX AND NOT APPLE AND NOT WIN32)
   install(FILES "icons/icon.svg"
           DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps"
           RENAME "gluefiles.svg")
-
   install(FILES "gluefiles.desktop"
           DESTINATION "${CMAKE_INSTALL_DATADIR}/applications")
 endif()
@@ -35,9 +38,15 @@ endif()
 set(CPACK_PACKAGE_NAME "gluefiles")
 set(CPACK_PACKAGE_VENDOR "Silicon Quality Commons")
 set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
 if (WIN32)
   set(CPACK_GENERATOR "NSIS")
-  set(CPACK_INSTALL_SCRIPTS "${CMAKE_SOURCE_DIR}/cmake/windeployqt.cmake")
+  set(CPACK_NSIS_DISPLAY_NAME "gluefiles")
+  set(CPACK_PACKAGE_INSTALL_DIRECTORY "gluefiles")
+  set(CPACK_NSIS_INSTALLED_ICON_NAME "gluefiles.exe")
+  set(CPACK_NSIS_MODIFY_PATH OFF)
+  set(CPACK_PACKAGE_EXECUTABLES "gluefiles" "gluefiles")
+  set(CPACK_NSIS_EXECUTABLES_DIRECTORY ".")
 endif()
 if (UNIX AND NOT APPLE AND NOT WIN32)
   set(CPACK_GENERATOR "DEB;TGZ")
