@@ -1,3 +1,4 @@
+
 #include <QApplication>
 #include <QMainWindow>
 #include <QSplitter>
@@ -34,6 +35,11 @@
 #include <QCoreApplication>
 #include <QIcon>
 #include <QGuiApplication>
+#include <QMenu>
+#include <QAction>
+#include <QDirIterator>
+#include <QRegularExpression>
+#include <QEventLoop>
 #include <algorithm>
 
 static constexpr const char* kDefaultOutputName = "output.txt";
@@ -101,7 +107,7 @@ class MainWindow : public QMainWindow {
     Q_OBJECT
 public:
     explicit MainWindow(QWidget* parent = nullptr) : QMainWindow(parent) {
-        setWindowTitle(tr("Glue Files"));
+        setWindowTitle(tr("GlueFiles"));
         resize(1040, 640);
 
         auto* central = new QWidget(this);
@@ -143,6 +149,10 @@ public:
         fileView_->setColumnWidth(2, 120);
         fileView_->setColumnWidth(3, 160);
 
+        fileView_->setContextMenuPolicy(Qt::CustomContextMenu);
+        connect(fileView_, &QTreeView::customContextMenuRequested,
+                this, &MainWindow::onFileViewContextMenu);
+
         leftLayout->addWidget(fileView_);
         split->addWidget(leftPanel);
 
@@ -180,6 +190,17 @@ public:
             auto* btnClear = new QPushButton(tr("Clear"));
             connect(btnClear, &QPushButton::clicked, list_, &QListWidget::clear);
             row->addWidget(btnClear);
+
+            clearByExtEdit_ = new QLineEdit();
+            clearByExtEdit_->setPlaceholderText(tr("exts: .log,.tmp"));
+            clearByExtEdit_->setToolTip(tr("Escribe extensiones separadas por coma, punto opcional. Ej: .log,.tmp,.map"));
+            clearByExtEdit_->setClearButtonEnabled(true);
+            clearByExtEdit_->setMaximumWidth(200);
+
+            clearByExtBtn_ = new QPushButton(tr("Limpiar por ext"));
+            connect(clearByExtBtn_, &QPushButton::clicked, this, &MainWindow::onClearByExt);
+            row->addWidget(clearByExtEdit_);
+            row->addWidget(clearByExtBtn_);
 
             row->addStretch(1);
             right->addLayout(row);
@@ -242,6 +263,12 @@ public:
         split->addWidget(rightPanel);
         split->setStretchFactor(0, 1);
         split->setStretchFactor(1, 1);
+
+        // todo: i'm pretty sure i should add a billion more formats here.
+        imageExts_ << "jpg" << "jpeg" << "png" << "gif" << "bmp" << "webp"
+                   << "tif" << "tiff" << "svg" << "ico" << "avif" << "heic" << "heif";
+        videoExts_ << "mp4" << "mkv" << "mov" << "avi" << "wmv" << "flv"
+                   << "webm" << "m4v" << "mpg" << "mpeg" << "3gp" << "ts";
     }
 
 private slots:
@@ -292,12 +319,38 @@ private slots:
         if (!d.isEmpty()) outDirEdit_->setText(d);
     }
 
-    static bool byFolderThenName(const QString& a, const QString& b) {
-        QFileInfo fa(a), fb(b);
-        const int cmp = QString::compare(fa.absolutePath(), fb.absolutePath(), Qt::CaseInsensitive);
-        if (cmp < 0) return true;
-        if (cmp > 0) return false;
-        return QString::compare(fa.fileName(), fb.fileName(), Qt::CaseInsensitive) < 0;
+    void onClearByExt() {
+        const QString raw = clearByExtEdit_->text().trimmed();
+        if (raw.isEmpty()) {
+            status_->setText(tr("Proporciona una o más extensiones (ej: .log,.tmp)"));
+            return;
+        }
+
+        const QStringList parts = raw.split(QRegularExpression("[,;\\s]+"), Qt::SkipEmptyParts);
+
+        QSet<QString> exts;
+        for (QString p : parts) {
+            p = p.trimmed().toLower();
+            if (p.startsWith('.')) p.remove(0, 1);
+            if (!p.isEmpty()) exts.insert(p);
+        }
+        if (exts.isEmpty()) {
+            status_->setText(tr("No hay extensiones válidas para limpiar."));
+            return;
+        }
+
+        int removed = 0;
+        for (int i = list_->count() - 1; i >= 0; --i) {
+            QListWidgetItem* it = list_->item(i);
+            const QString path = it->data(Qt::UserRole).toString();
+            const QString ext  = QFileInfo(path).suffix().toLower();
+            if (exts.contains(ext)) {
+                delete list_->takeItem(i);
+                ++removed;
+            }
+        }
+
+        status_->setText(tr("Eliminados %1 archivos por extensión").arg(removed));
     }
 
     void onBuild() {
@@ -365,6 +418,110 @@ private slots:
         QMessageBox::information(this, tr("Done"), tr("Output written to:\n%1").arg(outPath));
     }
 
+    void onFileViewContextMenu(const QPoint& pos) {
+        const QModelIndex idx = fileView_->indexAt(pos);
+        if (!idx.isValid() || !fsModel_->isDir(idx)) {
+            return;
+        }
+
+        QMenu menu(this);
+        QAction* actExpand = menu.addAction(tr("Expandir todas las subcarpetas"));
+        QAction* actAddAll = menu.addAction(tr("Añadir todos los archivos debajo de esta carpeta"));
+
+        QAction* chosen = menu.exec(fileView_->viewport()->mapToGlobal(pos));
+        if (!chosen) return;
+
+        if (chosen == actExpand) {
+            expandAllSubdirs(idx);
+        } else if (chosen == actAddAll) {
+            addAllFilesUnderIndex(idx);
+        }
+    }
+
+private:
+    static bool byFolderThenName(const QString& a, const QString& b) {
+        QFileInfo fa(a), fb(b);
+        const int cmp = QString::compare(fa.absolutePath(), fb.absolutePath(), Qt::CaseInsensitive);
+        if (cmp < 0) return true;
+        if (cmp > 0) return false;
+        return QString::compare(fa.fileName(), fb.fileName(), Qt::CaseInsensitive) < 0;
+    }
+
+    bool isSkippableExt(const QString& ext) const {
+        const QString e = ext.toLower();
+        if (imageExts_.contains(e)) return true;
+        if (videoExts_.contains(e)) return true;
+        if (e == "exe" || e == "deb") return true;
+        return false;
+    }
+
+    void addAllFilesUnderIndex(const QModelIndex& idx) {
+        const QString rootDir = fsModel_->filePath(idx);
+        if (rootDir.isEmpty()) return;
+
+        QList<QString> candidates;
+        candidates.reserve(1024);
+
+        QDirIterator it(rootDir,
+                        QStringList(),
+                        QDir::Files | QDir::NoDotAndDotDot,
+                        QDirIterator::Subdirectories);
+
+        while (it.hasNext()) {
+            const QString filePath = it.next();
+            const QString ext = QFileInfo(filePath).suffix();
+            if (isSkippableExt(ext)) continue;
+            candidates.append(filePath);
+        }
+
+        if (candidates.isEmpty()) {
+            QMessageBox::information(this, tr("Sin archivos"),
+                                     tr("No se encontraron archivos válidos debajo de:\n%1").arg(rootDir));
+            return;
+        }
+
+        list_->addPaths(candidates);
+        status_->setText(tr("Añadidos %1 archivos desde %2").arg(candidates.size()).arg(rootDir));
+    }
+
+    void expandAllSubdirs(const QModelIndex& rootIdx) {
+        if (!rootIdx.isValid() || !fsModel_->isDir(rootIdx)) return;
+
+        QSet<QString> visited;
+        QList<QModelIndex> queue;
+
+        auto enqueue = [&](const QModelIndex& idx) {
+            if (!idx.isValid() || !fsModel_->isDir(idx)) return;
+            const QString path = fsModel_->filePath(idx);
+            if (path.isEmpty() || visited.contains(path)) return;
+            visited.insert(path);
+            queue.append(idx);
+        };
+
+        enqueue(rootIdx);
+
+        while (!queue.isEmpty()) {
+            const QModelIndex cur = queue.takeFirst();
+
+            fileView_->expand(cur);
+
+            while (fsModel_->canFetchMore(cur)) {
+                fsModel_->fetchMore(cur);
+                QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+            }
+
+            QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
+            const int rows = fsModel_->rowCount(cur);
+            for (int r = 0; r < rows; ++r) {
+                const QModelIndex child = fsModel_->index(r, 0, cur);
+                if (fsModel_->isDir(child)) {
+                    enqueue(child);
+                }
+            }
+        }
+    }
+
 private:
     QFileSystemModel* fsModel_;
     QTreeView*        fileView_;
@@ -378,18 +535,27 @@ private:
     QCheckBox*        includePathHeaderCheck_;
     QProgressBar*     progress_;
     QLabel*           status_;
+
+    QLineEdit*        clearByExtEdit_;
+    QPushButton*      clearByExtBtn_;
+
+    QSet<QString>     imageExts_;
+    QSet<QString>     videoExts_;
 };
 
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
-    QApplication::setApplicationName(QStringLiteral("Glue Files"));
-    QApplication::setApplicationDisplayName(QStringLiteral("Glue Files"));
-    QApplication::setOrganizationName(QStringLiteral("SQ C"));
+    QApplication::setApplicationName(QStringLiteral("Gluefiles"));
+    QApplication::setApplicationDisplayName(QStringLiteral("Gluefiles"));
+    QApplication::setOrganizationName(QStringLiteral("SQC"));
+    QApplication::setApplicationVersion(QStringLiteral("1.1.0"));
     QGuiApplication::setDesktopFileName(QStringLiteral("gluefiles"));
+
     QTranslator qtTr;
-    qtTr.load(QLocale::system(), "qtbase", "_",
-              QLibraryInfo::path(QLibraryInfo::TranslationsPath));
-    app.installTranslator(&qtTr);
+    if (qtTr.load(QLocale::system(), "qtbase", "_",
+                  QLibraryInfo::path(QLibraryInfo::TranslationsPath))) {
+        app.installTranslator(&qtTr);
+    }
 
     QTranslator appTr;
     const QLocale sys = QLocale::system();
