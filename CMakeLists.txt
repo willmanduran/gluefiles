@@ -1,35 +1,49 @@
 cmake_minimum_required(VERSION 3.16)
-project(gluefiles LANGUAGES CXX)
+project(gluefiles VERSION 1.1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
+include(GNUInstallDirs)
 if (WIN32)
   add_executable(gluefiles WIN32 gluefiles.cpp)
 else()
   add_executable(gluefiles gluefiles.cpp)
 endif()
 target_sources(gluefiles PRIVATE
-  translations.qrc
-  icons.qrc
+        translations.qrc
+        icons.qrc
 )
 if (WIN32 AND EXISTS "${CMAKE_SOURCE_DIR}/icons/icon.ico")
   target_sources(gluefiles PRIVATE icons/app.rc)
 endif()
 
 target_link_libraries(gluefiles PRIVATE Qt6::Widgets)
-install(TARGETS gluefiles RUNTIME DESTINATION .)
+
+install(TARGETS gluefiles
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+if (UNIX AND NOT APPLE AND NOT WIN32)
+  install(FILES "icons/icon.svg"
+          DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps"
+          RENAME "gluefiles.svg")
+
+  install(FILES "gluefiles.desktop"
+          DESTINATION "${CMAKE_INSTALL_DATADIR}/applications")
+endif()
+
+set(CPACK_PACKAGE_NAME "gluefiles")
+set(CPACK_PACKAGE_VENDOR "Silicon Quality Commons")
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
 if (WIN32)
-  set(CPACK_PACKAGE_NAME "GlueFiles")
-  set(CPACK_PACKAGE_VENDOR "Silicon Quality Commons")
-  set(CPACK_PACKAGE_VERSION "1.0.0")
   set(CPACK_GENERATOR "NSIS")
   set(CPACK_INSTALL_SCRIPTS "${CMAKE_SOURCE_DIR}/cmake/windeployqt.cmake")
 endif()
 if (UNIX AND NOT APPLE AND NOT WIN32)
-  set(CPACK_PACKAGE_NAME "gluefiles")
-  set(CPACK_PACKAGE_VERSION "1.0.0")
-  set(CPACK_GENERATOR "TGZ")
+  set(CPACK_GENERATOR "DEB;TGZ")
+  set(CPACK_DEBIAN_PACKAGE_MAINTAINER "willman <ticuette@gmail.com>")
+  set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "A utility to glue multiple files into one.")
+  set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
+  set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 endif()
-
 include(CPack)
