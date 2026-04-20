@@ -26,7 +26,7 @@ GlueFiles is a small desktop utility that concatenates multiple files—in a spe
 
 ## Build from source
 
-### Linux / macOS
+### Linux / Windows
 
 Requires **Qt 6 (Widgets)** and **CMake ≥ 3.16**.
 
