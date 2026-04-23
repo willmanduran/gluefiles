@@ -1,32 +1,56 @@
 # GlueFiles
 
-## What it is
+GlueFiles is a minimalist desktop utility designed to concatenate multiple files into a single output with precise order control.
 
-GlueFiles is a small desktop utility that concatenates multiple files—in a specific order—into a single output file. Browse folders, drag-and-drop files, reorder them, and optionally include each file’s absolute path as a header before its contents. You can also paste a JSON list of paths.
+## Features
+* **Multi-format support:** Concatenate any text-based files.
+* **Drag-and-Drop:** Intuitive interface to add files from your system.
+* **Smart Headers:** Optionally include absolute file paths as headers.
+* **Only Headers:** You can also choose to output only headers!.
+* **JSON Import:** Paste a JSON array of paths for batch processing.
+* **Bilingual:** Native support for English and Spanish.
 
-## Build from source
+## Build from Source
 
-### Linux / Windows
+### Prerequisites
+* **Qt 6.x** (Widgets & LinguistTools)
+* **CMake ≥ 3.16**
+* **C++17 Compiler** (I used GCC 11+ and MinGW 13+)
 
-Requires **Qt 6 (Widgets)** and **CMake ≥ 3.16**.
-
+### Linux
 ```bash
-# Clone
+sudo apt install qt6-base-dev qt6-l10n-tools qt6-tools-dev
+
 git clone https://github.com/willmanstoolbox/gluefiles
 cd gluefiles
 mkdir build && cd build
 cmake ..
-make -j~(nproc)
-cpack -G (your choice to go TGZ, DEB, etc here)
+make -j$(nproc)
 
-# Run
-./build/gluefiles
-
+cpack -G DEB # or TGZ
 ```
 
+### Windows
+
+```powershell
+# 1. Setup Environment
+$env:Path += ";C:\Qt\6.11.0\mingw_64\bin;C:\Qt\Tools\mingw1310_64\bin"
+
+# 2. Configure & Build
+mkdir build; cd build
+cmake -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH="C:/Qt/6.11.0/mingw_64" ..
+cmake --build . --parallel 4
+
+# 3. Deploy
+windeployqt --qmldir .. gluefiles.exe
+```
+
+---
+
 ## Support & Contact
-If you find any bugs, have any ideas to improve this or just want to chat about C in general feel free to email me.
+If you find any bugs, have ideas to improve this, or want to discuss low-level systems and C-style architecture, feel free to reach out.
 
-**Email:** ticuette@gmail.com
+**Email:** ticuette@gmail.com  
+**Portfolio:** [willmanstoolbox.com](https://willmanstoolbox.com)
 
-**More Tools:** You can support my work or check out other tools at [willmanstoolbox.com](https://willmanstoolbox.com)
+---
