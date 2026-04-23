@@ -14,10 +14,10 @@ Requires **Qt 6 (Widgets)** and **CMake ≥ 3.16**.
 # Clone
 git clone https://github.com/willmanstoolbox/gluefiles
 cd gluefiles
-
-# Configure + build
-cmake -S . -B build
-cmake --build build -j
+mkdir build && cd build
+cmake ..
+make -j~(nproc)
+cpack -G (your choice to go TGZ, DEB, etc here)
 
 # Run
 ./build/gluefiles
