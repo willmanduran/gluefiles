@@ -1,4 +1,4 @@
-# GlueFiles — Willman’s Toolbox
+# GlueFiles
 
 ## What it is
 
