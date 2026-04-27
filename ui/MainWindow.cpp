@@ -85,7 +85,7 @@ void MainWindow::setupLayout() {
     m_btnRemove = new QPushButton(tr("Remove Selected"));
     m_btnClear = new QPushButton(tr("Clear"));
     m_clearByExtEdit = new QLineEdit();
-    m_clearByExtBtn = new QPushButton(tr("Limpiar por ext"));
+    m_clearByExtBtn = new QPushButton(tr("Clear by extension"));
 
     listBtns->addWidget(m_btnJson);
     listBtns->addWidget(m_btnRemove);

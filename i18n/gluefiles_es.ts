@@ -36,8 +36,8 @@
 <translation>exts: .log,.tmp</translation>
 </message>
 <message>
-<source>Limpiar por ext</source>
-<translation>Limpiar por ext</translation>
+<source>Clear by extension</source>
+<translation>Limpiar por extensión</translation>
 </message>
 <message>
 <source>Output Folder:</source>
